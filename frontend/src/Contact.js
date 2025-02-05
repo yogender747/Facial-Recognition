@@ -49,12 +49,12 @@ function Contact() {
       </video>
 
       {/* Back Button (Top-Left) */}
-      <a href="http://localhost:3000/home" className="back-button">
+      <a href="https://facerecog-fzhl3ua6j-yogenders-projects-0a943000.vercel.app/home" className="back-button">
         Back
       </a>
 
       {/* About Us Button (Top-Right) */}
-      <a href="http://localhost:3000/about" className="about-button">
+      <a href="https://facerecog-fzhl3ua6j-yogenders-projects-0a943000.vercel.app/about" className="about-button">
         About Us
       </a>
 

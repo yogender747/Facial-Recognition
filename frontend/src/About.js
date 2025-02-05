@@ -29,7 +29,7 @@ function About() {
           Home
         </a>
         <a
-          href="http://localhost:3000/contact"
+          href="https://facerecog-fzhl3ua6j-yogenders-projects-0a943000.vercel.app/contact"
           className="home-button"
           style={{ transform: contactHover ? "scale(1.1)" : "scale(1)", marginLeft: "10px" }}
           onMouseEnter={() => setContactHover(true)}
