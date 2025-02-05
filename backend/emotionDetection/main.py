@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect
 import cv2
 import numpy as np
 import os
@@ -10,6 +10,9 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
 from dotenv import load_dotenv  # Load environment variables from `.env`
+
+# ✅ Disable GPU for TensorFlow to prevent CUDA errors
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # ✅ Load environment variables
 load_dotenv()
@@ -31,12 +34,13 @@ data_moods_path = os.path.join(BASE_DIR, "..", "songRecommender", "data", "data_
 df1 = pd.read_csv(data_moods_path)
 
 # ✅ Initialize Spotify API securely
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIFY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
-    redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000"),
+    redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI", "https://facial-recognition-production-9e31.up.railway.app/callback"),
     scope="user-read-playback-state user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public"
-))
+)
+sp = spotipy.Spotify(auth_manager=sp_oauth)
 
 @app.route('/')
 def index():
@@ -46,7 +50,18 @@ def index():
 def playlist():
     return render_template('playlist.html')
 
-# ✅ Updated: Fetch Recommended Albums
+# ✅ Spotify Authentication Callback
+@app.route("/callback")
+def spotify_callback():
+    code = request.args.get("code")
+    if not code:
+        return jsonify({"error": "Authorization failed"}), 400
+
+    token_info = sp_oauth.get_access_token(code)
+    session["token_info"] = token_info
+    return redirect("/")
+
+# ✅ Fetch Recommended Albums
 @app.route('/recommended-albums')
 def recommended_albums():
     try:
