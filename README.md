@@ -35,7 +35,7 @@ The system adapts music recommendations from Spotify based on users’ emotions,
 1. Clone the repository:
 
    ```
-   git clone https://github.com/yogender747
+   git clone https://github.com/yogender747/Facial-Recognition
    ```
 
 2. Navigate to the respective folders for frontend and backend setups.
