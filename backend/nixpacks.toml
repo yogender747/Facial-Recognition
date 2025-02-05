@@ -1,5 +1,8 @@
 [phases.setup]
-nixPkgs = ["python312", "python312Packages.pip", "ffmpeg", "mesa", "mesa_glu", "libglvnd", "xorg.libX11", "xorg.libXext", "xorg.libXrender", "xorg.libxcb"]
+nixPkgs = ["python312Full", "ffmpeg", "mesa", "mesa_glu", "libglvnd", "xorg.libX11", "xorg.libXext", "xorg.libXrender", "xorg.libxcb"]
 
-[phases.install]
-cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
+[phases.build]
+cmds = ["python3 -m venv /opt/venv", ". /opt/venv/bin/activate", "pip install --no-cache-dir -r requirements.txt"]
+
+[start]
+cmd = ". /opt/venv/bin/activate && gunicorn emotionDetection.main:app --bind 0.0.0.0:$PORT"
