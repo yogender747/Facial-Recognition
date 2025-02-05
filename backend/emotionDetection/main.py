@@ -35,12 +35,15 @@ classifier = load_model(MODEL_PATH)
 # ✅ Emotion Labels
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
-# ✅ Load Music Dataset
+# ✅ Load Music Dataset (Check if it exists)
 data_moods_path = os.path.join(BASE_DIR, "..", "songRecommender", "data", "data_moods.csv")
+if not os.path.exists(data_moods_path):
+    raise FileNotFoundError("❌ ERROR: data_moods.csv is missing in songRecommender/data folder!")
+
 df1 = pd.read_csv(data_moods_path)
 
 # ✅ Spotify Authentication (Token Caching)
-SPOTIFY_CACHE_PATH = "/app/emotionDetection/.spotify_cache"
+SPOTIFY_CACHE_PATH = os.path.join(BASE_DIR, ".spotify_cache")
 
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIFY_CLIENT_ID"),
@@ -51,23 +54,25 @@ sp_oauth = SpotifyOAuth(
 )
 
 def get_spotify_client():
+    """✅ Get a valid Spotify API client with refreshed token if needed."""
     token_info = sp_oauth.get_cached_token()
-    
-    # ✅ Fix: If token is missing, try refreshing it
-    if not token_info:
-        print("🚨 No Spotify token found. Attempting to refresh...")
 
-        # Try to get a new access token
-        try:
-            auth_url = sp_oauth.get_authorize_url()
-            print(f"🔗 Go to this URL and authenticate: {auth_url}")
-            return None  # Return None to prevent crashing
-        except Exception as e:
-            print(f"⚠️ Failed to refresh token: {str(e)}")
-            return None  # Return None to prevent crashing
+    # ✅ If no token, prompt user for authentication
+    if not token_info:
+        print("🚨 No Spotify token found. Authenticate Spotify at this URL:")
+        print(sp_oauth.get_authorize_url())
+        return None  # Prevents crashing
+
+    # ✅ If token expired, refresh it
+    if sp_oauth.is_token_expired(token_info):
+        print("🔄 Refreshing expired token...")
+        token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+
+        # ✅ Save new token
+        with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
+            cache_file.write(str(token_info))
 
     return spotipy.Spotify(auth=token_info["access_token"])
-
 
 @app.route('/')
 def index():
@@ -88,8 +93,8 @@ def spotify_callback():
     with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
         cache_file.write(str(token_info))  # ✅ Save token
     session["token_info"] = token_info
+    print("✅ Spotify Authentication Successful!")
     return redirect("/")
-
 
 # ✅ Fetch Recommended Albums
 @app.route('/recommended-albums')
@@ -97,9 +102,11 @@ def recommended_albums():
     try:
         print("🔎 Fetching recommended albums...")
         mood = request.args.get('mood', 'happy')  # Get mood from request
+        sp = get_spotify_client()
+        if sp is None:
+            return jsonify({"error": "Please authenticate Spotify first"}), 400
 
         # Spotify search query
-        sp = get_spotify_client()
         limit = 50
         offset = random.randint(0, 950)  # Random offset to get different results
         results = sp.search(q=mood, type='album', limit=limit, offset=offset)
@@ -190,7 +197,6 @@ def detect():
 
     print(f"✅ Created Playlist: {playlist_name} - {playlist_id}")
 
-    # ✅ Return JSON Response with Redirect URL
     return jsonify({"emotion": detected_emotion, "redirect": f"/playlist.html?playlist={playlist_id}"})
 
 if __name__ == '__main__':
