@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python312", "ffmpeg", "mesa", "mesa_glu", "libglvnd", "xorg.libX11", "xorg.libXext", "xorg.libXrender", "xorg.libxcb"]
+nixPkgs = ["python312", "python312Packages.pip", "ffmpeg", "mesa", "mesa_glu", "libglvnd", "xorg.libX11", "xorg.libXext", "xorg.libXrender", "xorg.libxcb"]
 
 [phases.install]
-cmds = ["python3 -m ensurepip --default-pip", "pip install --upgrade pip", "pip install -r requirements.txt"]
+cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
