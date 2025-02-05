@@ -9,8 +9,7 @@ import random
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
-from dotenv import load_dotenv  # Load environment variables from `.env`
-import logging
+from dotenv import load_dotenv  # Load environment variables
 
 # ✅ Disable GPU for TensorFlow (Prevents CUDA errors)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -19,20 +18,17 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # Secure secret key
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # Secure session
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory
 
-# ✅ Setup Logging
-logging.basicConfig(level=logging.INFO)
-
-# ✅ Load Face Detector & Model
+# ✅ Load Face Detector & Model (With Error Handling)
 face_cascade = cv2.CascadeClassifier(os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml"))
 
-# ✅ Load Emotion Detection Model
 MODEL_PATH = os.path.join(BASE_DIR, "model.h5")
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError("❌ ERROR: model.h5 is missing!")
+
 classifier = load_model(MODEL_PATH)
 
 # ✅ Emotion Labels
@@ -57,19 +53,19 @@ sp_oauth = SpotifyOAuth(
 )
 
 def get_spotify_client():
-    """ Retrieves a valid Spotify client by checking and refreshing token. """
+    """ Retrieve a valid Spotify client by checking and refreshing token. """
     token_info = sp_oauth.get_cached_token()
 
     if not token_info:
         auth_url = sp_oauth.get_authorize_url()
         print(f"🚨 No Spotify token found. Authenticate here: {auth_url}")
-        return None  # Prevents crashing if no token is available
+        return None
 
     if sp_oauth.is_token_expired(token_info):
-        print("🔄 Spotify token expired. Refreshing token...")
+        print("🔄 Spotify token expired. Refreshing...")
         token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
         with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
-            cache_file.write(str(token_info))  # ✅ Save refreshed token
+            cache_file.write(str(token_info))
 
     return spotipy.Spotify(auth=token_info["access_token"])
 
@@ -93,11 +89,44 @@ def spotify_callback():
     print("✅ Spotify Authentication Successful!")
     return redirect("/")
 
+# ✅ Fetch Recommended Albums
+@app.route('/recommended-albums')
+def recommended_albums():
+    try:
+        mood = request.args.get('mood', 'happy')  # Get mood from request
+        sp = get_spotify_client()
+        if sp is None:
+            return jsonify({"error": "Spotify authentication required"}), 400
+
+        # Spotify search query
+        limit = 50
+        offset = random.randint(0, 950)
+        results = sp.search(q=mood, type='album', limit=limit, offset=offset)
+        albums = results.get('albums', {}).get('items', [])
+
+        if not albums:
+            return jsonify({"error": "No recommended albums found"}), 500
+
+        random.shuffle(albums)
+        album_data = [
+            {
+                "name": album['name'],
+                "artist": album['artists'][0]['name'],
+                "url": album['external_urls']['spotify'],
+                "image": album['images'][0]['url'] if album.get('images') else "https://via.placeholder.com/100"
+            }
+            for album in albums
+        ]
+        return jsonify({"albums": album_data})
+
+    except Exception as e:
+        print("🚨 Error fetching recommended albums:", str(e))
+        return jsonify({"error": str(e)}), 500
+
 # ✅ Face Detection & Emotion Prediction
 @app.route('/detect', methods=['POST'])
 def detect():
     file = request.files.get('image')
-
     if file is None:
         return jsonify({"error": "No image received"}), 400
 
