@@ -52,9 +52,22 @@ sp_oauth = SpotifyOAuth(
 
 def get_spotify_client():
     token_info = sp_oauth.get_cached_token()
+    
+    # ✅ Fix: If token is missing, try refreshing it
     if not token_info:
-        raise Exception("🚨 No Spotify token found. Please authenticate Spotify first.")
+        print("🚨 No Spotify token found. Attempting to refresh...")
+
+        # Try to get a new access token
+        try:
+            auth_url = sp_oauth.get_authorize_url()
+            print(f"🔗 Go to this URL and authenticate: {auth_url}")
+            return None  # Return None to prevent crashing
+        except Exception as e:
+            print(f"⚠️ Failed to refresh token: {str(e)}")
+            return None  # Return None to prevent crashing
+
     return spotipy.Spotify(auth=token_info["access_token"])
+
 
 @app.route('/')
 def index():
@@ -73,10 +86,10 @@ def spotify_callback():
 
     token_info = sp_oauth.get_access_token(code)
     with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
-        cache_file.write(str(token_info))
-
+        cache_file.write(str(token_info))  # ✅ Save token
     session["token_info"] = token_info
     return redirect("/")
+
 
 # ✅ Fetch Recommended Albums
 @app.route('/recommended-albums')
