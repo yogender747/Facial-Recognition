@@ -1,2 +1,2 @@
 [phases.setup]
-nixPkgs = ["libglvnd"]
+nixPkgs = ["libglvnd", "libx11", "libxcb", "libxext", "ffmpeg"]
