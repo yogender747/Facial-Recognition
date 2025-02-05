@@ -5,4 +5,4 @@ keras
 tensorflow
 spotipy
 pandas
-opencv-python
+opencv-python-headless
