@@ -9,26 +9,32 @@ import random
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
+from dotenv import load_dotenv  # Load environment variables from `.env`
+
+# ✅ Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Needed for session management
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # Secure secret key
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory (backend/emotionDetection)
 
-# Load Face Detector & Model
+# ✅ Load Face Detector & Model
 face_cascade = cv2.CascadeClassifier(os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml"))
 classifier = load_model(os.path.join(BASE_DIR, "model.h5"))
 
-# Load Music Dataset
+# ✅ Emotion Labels
+emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+
+# ✅ Load Music Dataset
 data_moods_path = os.path.join(BASE_DIR, "..", "songRecommender", "data", "data_moods.csv")
 df1 = pd.read_csv(data_moods_path)
 
-
-# ✅ Initialize Spotify API
+# ✅ Initialize Spotify API securely
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    client_id="af82b6b373624e18be88dd94e0a97065",
-    client_secret="33827c4e4ffd40b7b1f8e3492a2345ad",
-    redirect_uri="http://localhost:8000",
+    client_id=os.getenv("SPOTIFY_CLIENT_ID"),
+    client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
+    redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI", "http://localhost:8000"),
     scope="user-read-playback-state user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public"
 ))
 
@@ -40,44 +46,35 @@ def index():
 def playlist():
     return render_template('playlist.html')
 
-# ✅ Updated: Fetch Recommended Albums (Now Using a broader search with randomized offset)
+# ✅ Updated: Fetch Recommended Albums
 @app.route('/recommended-albums')
 def recommended_albums():
     try:
         print("🔎 Fetching recommended albums...")
+        mood = request.args.get('mood', 'happy')  # Get mood from request
 
-        # Get the mood parameter from the request query string; default to 'happy'
-        mood = request.args.get('mood', 'happy')
-        
-        # Define the maximum number of albums to fetch (Spotify allows up to 50 per request for search)
+        # Spotify search query
         limit = 50
-        
-        # To get a variety of albums, choose a random offset (Spotify’s search API supports an offset up to 1000)
-        offset = random.randint(0, 950)
-        
-        # Use the search endpoint to look for albums matching the mood keyword.
+        offset = random.randint(0, 950)  # Random offset to get different results
         results = sp.search(q=mood, type='album', limit=limit, offset=offset)
         albums = results.get('albums', {}).get('items', [])
-        
+
         if not albums:
             return jsonify({"error": "No recommended albums found"}), 500
-        
-        # Shuffle the albums to get different results each time.
+
+        # Shuffle and return album data
         random.shuffle(albums)
-        
-        # Build album data from all fetched albums.
         album_data = [
             {
                 "name": album['name'],
                 "artist": album['artists'][0]['name'],
                 "url": album['external_urls']['spotify'],
-                "image": album['images'][0]['url'] if album.get('images') and len(album['images']) > 0 else "https://via.placeholder.com/100"
+                "image": album['images'][0]['url'] if album.get('images') else "https://via.placeholder.com/100"
             }
             for album in albums
         ]
-        
         return jsonify({"albums": album_data})
-    
+
     except Exception as e:
         print("🚨 Error fetching recommended albums:", str(e))
         return jsonify({"error": str(e)}), 500
@@ -85,9 +82,6 @@ def recommended_albums():
 # ✅ Store & Retrieve Emotion History
 @app.route('/emotion-history')
 def emotion_history():
-    """
-    API to retrieve detected emotion history.
-    """
     emotion_data = session.get('emotion_history', [])
     return jsonify({"history": emotion_data})
 
@@ -125,7 +119,7 @@ def detect():
 
     detected_emotion = max(set(emotions_detected), key=emotions_detected.count)
 
-    # ✅ Store Emotion History (keep only the last 20 records in session)
+    # ✅ Store Emotion History (keep only the last 20 records)
     emotion_data = session.get('emotion_history', [])
     emotion_data.append({"emotion": detected_emotion, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
     session['emotion_history'] = emotion_data[-20:]
@@ -159,8 +153,8 @@ def detect():
 
     print(f"✅ Created Playlist: {playlist_name} - {playlist_id}")
 
-    # ✅ Return JSON Response with Redirect URL to playlist.html
+    # ✅ Return JSON Response with Redirect URL
     return jsonify({"emotion": detected_emotion, "redirect": f"/playlist.html?playlist={playlist_id}"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=True)
