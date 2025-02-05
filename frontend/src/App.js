@@ -5,6 +5,9 @@ import './App.css';
 import Bgm from './components/bgm.mp4';
 import { Link } from 'react-router-dom';
 
+// ✅ Set API URL for the deployed backend
+const API_URL = "https://facial-recognition-production-9e31.up.railway.app";
+
 function Home() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -19,13 +22,13 @@ function Home() {
       setShowUpgradeModal(true);
     } else {
       // Redirect premium users to the MoodSync page
-      window.location.href = "http://127.0.0.1:5000/";
+      window.location.href = API_URL;
     }
   };
 
   const handleUpgradeConfirm = () => {
     // Redirect to the pricing page
-    window.location.href = "http://localhost:3000/pricing";
+    window.location.href = "/pricing";
   };
 
   const handleUpgradeCancel = () => {
@@ -52,7 +55,7 @@ function Home() {
         <nav className="nav-links">
           <a className="nav-link" href="/contact">Contact Us</a>
           <a className="nav-link" href="/pricing">Buy Now</a>
-          <a className="nav-link" href="http://localhost:3000/login">Logout</a>
+          <a className="nav-link" href="/login">Logout</a>
         </nav>
       </header>
 
@@ -66,7 +69,7 @@ function Home() {
             At MoodSync, we harness cutting-edge AI to curate personalized playlists that resonate with your emotions. Our innovative platform analyzes your expressions in real time, delivering a bespoke soundscape designed exclusively for you. Elevate your auditory journey and embrace a new era of music.
           </p>
           <a
-            href="http://127.0.0.1:5000/"
+            href={API_URL}
             id="abt3"
             className="btn try-btn"
             onClick={handleExplore}
