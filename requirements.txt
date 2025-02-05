@@ -1,0 +1,8 @@
+Flask
+gunicorn
+numpy
+keras
+tensorflow
+spotipy
+pandas
+opencv-python

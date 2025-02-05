@@ -1,0 +1,294 @@
+/* -------------------------- */
+/* Background Video */
+/* -------------------------- */
+.contact-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+/* -------------------------- */
+/* Main Container */
+/* -------------------------- */
+.contact-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  color: white;
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+}
+
+/* -------------------------- */
+/* Back Button Styling (Top-Left) */
+/* -------------------------- */
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease-in-out;
+  z-index: 11;
+}
+
+.back-button:hover {
+  transform: scale(1.1);
+}
+
+/* -------------------------- */
+/* About Us Button Styling (Top-Right) */
+/* -------------------------- */
+.about-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease-in-out;
+  z-index: 11;
+}
+
+.about-button:hover {
+  transform: scale(1.1);
+}
+
+/* -------------------------- */
+/* Contact Title */
+/* -------------------------- */
+.contact-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* -------------------------- */
+/* Contact Boxes */
+/* -------------------------- */
+.contact-boxes {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* -------------------------- */
+/* Individual Contact Box */
+/* -------------------------- */
+.contact-box {
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 20px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.3);
+  animation: glowEffect 3s infinite alternate;
+}
+
+/* Contact Box Heading */
+.contact-box h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+/* Contact Box Role */
+.contact-box p {
+  font-size: 1rem;
+  font-weight: 300;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+
+/* -------------------------- */
+/* Social Media Icons */
+/* -------------------------- */
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.icon {
+  font-size: 1.5rem;
+  color: white;
+  transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+.icon:hover {
+  transform: scale(1.2);
+  color: #ffcc00;
+}
+
+/* -------------------------- */
+/* Animation Effects */
+/* -------------------------- */
+@keyframes glowEffect {
+  0% { box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.2); }
+  100% { box-shadow: 0px 0px 30px rgba(255, 255, 255, 0.5); }
+}
+
+/* -------------------------- */
+/* Contact Form Container */
+/* -------------------------- */
+.contact-form-container {
+  width: 90%;
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.3);
+  text-align: left;
+}
+
+.contact-form-container h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+/* -------------------------- */
+/* Contact Form Styling */
+/* -------------------------- */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Input & Textarea Fields with Outline */
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1rem;
+  transition: border 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+/* Placeholder styling */
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+  transition: opacity 0.3s ease;
+}
+
+/* On focus: outline and hide placeholder */
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: #ffcc00;
+  box-shadow: 0 0 8px rgba(255, 204, 0, 0.8);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.contact-form input:focus::placeholder,
+.contact-form textarea:focus::placeholder {
+  opacity: 0;
+}
+
+.contact-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.contact-form button {
+  padding: 10px 20px;
+  background: #ffcc00;
+  border: none;
+  border-radius: 8px;
+  color: #333;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.contact-form button:hover {
+  background: #e6b800;
+  transform: scale(1.02);
+}
+
+.form-status {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: #ffcc00;
+  text-align: center;
+}
+
+/* -------------------------- */
+/* Testimonials Section */
+/* -------------------------- */
+.testimonials-container {
+  width: 90%;
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.testimonials-container h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+}
+
+.testimonials {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.testimonial {
+  padding: 15px;
+  border-left: 4px solid #ffcc00;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+}
+
+.feedback {
+  font-size: 1.1rem;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+.user-name {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #ffcc00;
+}
+
+/* -------------------------- */
+/* Responsive Design */
+/* -------------------------- */
+@media (max-width: 900px) {
+  .contact-boxes {
+    flex-direction: column;
+    align-items: center;
+  }
+}

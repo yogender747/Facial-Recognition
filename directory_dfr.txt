@@ -1,0 +1,112 @@
+Folder PATH listing for volume Study
+Volume serial number is 5AFD-D813
+D:.
+¦   .gitignore
+¦   config.ini
+¦   directory_structure.txt
+¦   emotion_history.json
+¦   package-lock.json
+¦   README.md
+¦   requirements.txt
+¦   users.json
+¦   
++---backend
+¦   +---emotionDetection
+¦   ¦   ¦   haarcascade_frontalface_default.xml
+¦   ¦   ¦   main.py
+¦   ¦   ¦   model.h5
+¦   ¦   ¦   new.txt
+¦   ¦   ¦   
+¦   ¦   +---templates
+¦   ¦           camera.html
+¦   ¦           new.html
+¦   ¦           playlist.html
+¦   ¦           
+¦   +---songRecommender
+¦       ¦   clustering2.ipynb
+¦       ¦   data-download.ipynb
+¦       ¦   helpers.py
+¦       ¦   Keras-Classification.ipynb
+¦       ¦   test.py
+¦       ¦   test2.py
+¦       ¦   
+¦       +---.ipynb_checkpoints
+¦       ¦       clustering2-checkpoint.ipynb
+¦       ¦       data-download-checkpoint.ipynb
+¦       ¦       Keras-Classification-checkpoint.ipynb
+¦       ¦       
+¦       +---data
+¦       ¦       bg.jpeg
+¦       ¦       cluster0.csv
+¦       ¦       cluster1.csv
+¦       ¦       data_moods.csv
+¦       ¦       df.csv
+¦       ¦       df1.csv
+¦       ¦       df2.csv
+¦       ¦       
+¦       +---__pycache__
+¦               helpers.cpython-312.pyc
+¦               
++---frontend
+    ¦   package-lock.json
+    ¦   package.json
+    ¦   
+    +---public
+    ¦   ¦   favicon.ico
+    ¦   ¦   index.html
+    ¦   ¦   logo192.png
+    ¦   ¦   logo512.png
+    ¦   ¦   manifest.json
+    ¦   ¦   robots.txt
+    ¦   ¦   users.json
+    ¦   ¦   
+    ¦   +---avatars
+    ¦   ¦       angry.png
+    ¦   ¦       fear.png
+    ¦   ¦       Happy.png
+    ¦   ¦       music1.png
+    ¦   ¦       music2.png
+    ¦   ¦       music3.png
+    ¦   ¦       music4.png
+    ¦   ¦       music5.png
+    ¦   ¦       neutral.png
+    ¦   ¦       sad.png
+    ¦   ¦       surprised.png
+    ¦   ¦       
+    ¦   +---templates
+    ¦   ¦       index.html
+    ¦   ¦       
+    ¦   +---videos
+    ¦   ¦       background.mp4
+    ¦   ¦       bgm.mp4
+    ¦   ¦       
+    ¦   +---__pycache__
+    ¦           app.cpython-311.pyc
+    ¦           
+    +---src
+        ¦   About.css
+        ¦   About.js
+        ¦   AdminControl.css
+        ¦   AdminControl.js
+        ¦   App.css
+        ¦   App.js
+        ¦   Auth.css
+        ¦   Contact.css
+        ¦   Contact.js
+        ¦   index.js
+        ¦   Login.js
+        ¦   Payment.css
+        ¦   Payment.js
+        ¦   Pricing.js
+        ¦   Profile.css
+        ¦   Profile.js
+        ¦   Signup.js
+        ¦   
+        +---assets
+        ¦       razorpay_logo.png
+        ¦       upi_qr.png
+        ¦       
+        +---components
+                ankh.png
+                bgm.mp4
+                
