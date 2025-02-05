@@ -11,7 +11,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
 from dotenv import load_dotenv  # Load environment variables from `.env`
 
-# ✅ Disable GPU for TensorFlow to prevent CUDA errors
+# ✅ Disable GPU for TensorFlow (Prevents CUDA errors)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # ✅ Load environment variables
@@ -24,7 +24,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory (
 
 # ✅ Load Face Detector & Model
 face_cascade = cv2.CascadeClassifier(os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml"))
-classifier = load_model(os.path.join(BASE_DIR, "model.h5"))
+
+# ✅ Load Emotion Detection Model (Error Handling)
+MODEL_PATH = os.path.join(BASE_DIR, "model.h5")
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError("❌ ERROR: model.h5 is missing in the backend/emotionDetection folder!")
+
+classifier = load_model(MODEL_PATH)
 
 # ✅ Emotion Labels
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
@@ -33,14 +39,22 @@ emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surpri
 data_moods_path = os.path.join(BASE_DIR, "..", "songRecommender", "data", "data_moods.csv")
 df1 = pd.read_csv(data_moods_path)
 
-# ✅ Initialize Spotify API securely
+# ✅ Spotify Authentication (Token Caching)
+SPOTIFY_CACHE_PATH = "/app/emotionDetection/.spotify_cache"
+
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIFY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
     redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI", "https://facial-recognition-production-9e31.up.railway.app/callback"),
-    scope="user-read-playback-state user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public"
+    scope="user-read-playback-state user-library-read playlist-read-private playlist-read-collaborative playlist-modify-public",
+    cache_path=SPOTIFY_CACHE_PATH
 )
-sp = spotipy.Spotify(auth_manager=sp_oauth)
+
+def get_spotify_client():
+    token_info = sp_oauth.get_cached_token()
+    if not token_info:
+        raise Exception("🚨 No Spotify token found. Please authenticate Spotify first.")
+    return spotipy.Spotify(auth=token_info["access_token"])
 
 @app.route('/')
 def index():
@@ -58,6 +72,9 @@ def spotify_callback():
         return jsonify({"error": "Authorization failed"}), 400
 
     token_info = sp_oauth.get_access_token(code)
+    with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
+        cache_file.write(str(token_info))
+
     session["token_info"] = token_info
     return redirect("/")
 
@@ -69,6 +86,7 @@ def recommended_albums():
         mood = request.args.get('mood', 'happy')  # Get mood from request
 
         # Spotify search query
+        sp = get_spotify_client()
         limit = 50
         offset = random.randint(0, 950)  # Random offset to get different results
         results = sp.search(q=mood, type='album', limit=limit, offset=offset)
@@ -94,12 +112,7 @@ def recommended_albums():
         print("🚨 Error fetching recommended albums:", str(e))
         return jsonify({"error": str(e)}), 500
 
-# ✅ Store & Retrieve Emotion History
-@app.route('/emotion-history')
-def emotion_history():
-    emotion_data = session.get('emotion_history', [])
-    return jsonify({"history": emotion_data})
-
+# ✅ Detect Emotion from Image
 @app.route('/detect', methods=['POST'])
 def detect():
     file = request.files.get('image')
@@ -134,11 +147,6 @@ def detect():
 
     detected_emotion = max(set(emotions_detected), key=emotions_detected.count)
 
-    # ✅ Store Emotion History (keep only the last 20 records)
-    emotion_data = session.get('emotion_history', [])
-    emotion_data.append({"emotion": detected_emotion, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
-    session['emotion_history'] = emotion_data[-20:]
-
     # ✅ Map Emotions to Playlists
     mood_mapping = {
         "Angry": "Energetic",
@@ -160,6 +168,7 @@ def detect():
     list_of_songs = random.sample(list_of_songs, min(len(list_of_songs), 15))
 
     # ✅ Create Playlist on Spotify
+    sp = get_spotify_client()
     playlist_name = f"{mood} Songs"
     user_id = sp.me()['id']
     new_playlist = sp.user_playlist_create(user=user_id, name=playlist_name, public=True, description=f"Playlist for {mood} mood")
