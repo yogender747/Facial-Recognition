@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import cv2
 import numpy as np
 import os
@@ -10,6 +10,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from datetime import datetime
 from dotenv import load_dotenv  # Load environment variables from `.env`
+import logging
 
 # ✅ Disable GPU for TensorFlow (Prevents CUDA errors)
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -20,25 +21,27 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")  # Secure secret key
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory (backend/emotionDetection)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory
+
+# ✅ Setup Logging
+logging.basicConfig(level=logging.INFO)
 
 # ✅ Load Face Detector & Model
 face_cascade = cv2.CascadeClassifier(os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml"))
 
-# ✅ Load Emotion Detection Model (Error Handling)
+# ✅ Load Emotion Detection Model
 MODEL_PATH = os.path.join(BASE_DIR, "model.h5")
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("❌ ERROR: model.h5 is missing in the backend/emotionDetection folder!")
-
+    raise FileNotFoundError("❌ ERROR: model.h5 is missing!")
 classifier = load_model(MODEL_PATH)
 
 # ✅ Emotion Labels
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
-# ✅ Load Music Dataset (Check if it exists)
+# ✅ Load Music Dataset
 data_moods_path = os.path.join(BASE_DIR, "..", "songRecommender", "data", "data_moods.csv")
 if not os.path.exists(data_moods_path):
-    raise FileNotFoundError("❌ ERROR: data_moods.csv is missing in songRecommender/data folder!")
+    raise FileNotFoundError("❌ ERROR: data_moods.csv is missing!")
 
 df1 = pd.read_csv(data_moods_path)
 
@@ -54,27 +57,21 @@ sp_oauth = SpotifyOAuth(
 )
 
 def get_spotify_client():
-    """
-    Retrieves a valid Spotify client by checking and refreshing token.
-    """
+    """ Retrieves a valid Spotify client by checking and refreshing token. """
     token_info = sp_oauth.get_cached_token()
 
-    # If token doesn't exist, prompt user to authenticate
     if not token_info:
         auth_url = sp_oauth.get_authorize_url()
         print(f"🚨 No Spotify token found. Authenticate here: {auth_url}")
-        return None  # Prevents app from crashing if no token is available
+        return None  # Prevents crashing if no token is available
 
-    # Check if the token has expired
     if sp_oauth.is_token_expired(token_info):
         print("🔄 Spotify token expired. Refreshing token...")
         token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
         with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
             cache_file.write(str(token_info))  # ✅ Save refreshed token
 
-    # ✅ Return a valid Spotify client
     return spotipy.Spotify(auth=token_info["access_token"])
-
 
 @app.route('/')
 def index():
@@ -92,52 +89,15 @@ def spotify_callback():
         return jsonify({"error": "Authorization failed"}), 400
 
     token_info = sp_oauth.get_access_token(code)
-    with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
-        cache_file.write(str(token_info))  # ✅ Save token
     session["token_info"] = token_info
     print("✅ Spotify Authentication Successful!")
     return redirect("/")
 
-# ✅ Fetch Recommended Albums
-@app.route('/recommended-albums')
-def recommended_albums():
-    try:
-        print("🔎 Fetching recommended albums...")
-        mood = request.args.get('mood', 'happy')  # Get mood from request
-        sp = get_spotify_client()
-        if sp is None:
-            return jsonify({"error": "Please authenticate Spotify first"}), 400
-
-        # Spotify search query
-        limit = 50
-        offset = random.randint(0, 950)  # Random offset to get different results
-        results = sp.search(q=mood, type='album', limit=limit, offset=offset)
-        albums = results.get('albums', {}).get('items', [])
-
-        if not albums:
-            return jsonify({"error": "No recommended albums found"}), 500
-
-        # Shuffle and return album data
-        random.shuffle(albums)
-        album_data = [
-            {
-                "name": album['name'],
-                "artist": album['artists'][0]['name'],
-                "url": album['external_urls']['spotify'],
-                "image": album['images'][0]['url'] if album.get('images') else "https://via.placeholder.com/100"
-            }
-            for album in albums
-        ]
-        return jsonify({"albums": album_data})
-
-    except Exception as e:
-        print("🚨 Error fetching recommended albums:", str(e))
-        return jsonify({"error": str(e)}), 500
-
-# ✅ Detect Emotion from Image
+# ✅ Face Detection & Emotion Prediction
 @app.route('/detect', methods=['POST'])
 def detect():
     file = request.files.get('image')
+
     if file is None:
         return jsonify({"error": "No image received"}), 400
 
@@ -153,7 +113,6 @@ def detect():
     if len(faces) == 0:
         return jsonify({"error": "No face detected"}), 400
 
-    # ✅ Detect Emotion
     emotions_detected = []
     for (x, y, w, h) in faces:
         roi_gray = gray[y:y + h, x:x + w]
@@ -191,15 +150,21 @@ def detect():
 
     # ✅ Create Playlist on Spotify
     sp = get_spotify_client()
-    playlist_name = f"{mood} Songs"
-    user_id = sp.me()['id']
-    new_playlist = sp.user_playlist_create(user=user_id, name=playlist_name, public=True, description=f"Playlist for {mood} mood")
-    playlist_id = new_playlist['id']
-    sp.user_playlist_add_tracks(user=user_id, playlist_id=playlist_id, tracks=list_of_songs)
+    if sp is None:
+        return jsonify({"error": "Spotify authentication required"}), 400
 
-    print(f"✅ Created Playlist: {playlist_name} - {playlist_id}")
+    try:
+        user_id = sp.me()['id']
+        new_playlist = sp.user_playlist_create(user=user_id, name=f"{mood} Songs", public=True)
+        playlist_id = new_playlist['id']
+        sp.user_playlist_add_tracks(user=user_id, playlist_id=playlist_id, tracks=list_of_songs)
 
-    return jsonify({"emotion": detected_emotion, "redirect": f"/playlist.html?playlist={playlist_id}"})
+        print(f"✅ Created Playlist: {mood} Songs - {playlist_id}")
+
+        return jsonify({"emotion": detected_emotion, "redirect": f"/playlist.html?playlist={playlist_id}"})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)), debug=True)
