@@ -54,25 +54,27 @@ sp_oauth = SpotifyOAuth(
 )
 
 def get_spotify_client():
-    """✅ Get a valid Spotify API client with refreshed token if needed."""
+    """
+    Retrieves a valid Spotify client by checking and refreshing token.
+    """
     token_info = sp_oauth.get_cached_token()
 
-    # ✅ If no token, prompt user for authentication
+    # If token doesn't exist, prompt user to authenticate
     if not token_info:
-        print("🚨 No Spotify token found. Authenticate Spotify at this URL:")
-        print(sp_oauth.get_authorize_url())
-        return None  # Prevents crashing
+        auth_url = sp_oauth.get_authorize_url()
+        print(f"🚨 No Spotify token found. Authenticate here: {auth_url}")
+        return None  # Prevents app from crashing if no token is available
 
-    # ✅ If token expired, refresh it
+    # Check if the token has expired
     if sp_oauth.is_token_expired(token_info):
-        print("🔄 Refreshing expired token...")
+        print("🔄 Spotify token expired. Refreshing token...")
         token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
-
-        # ✅ Save new token
         with open(SPOTIFY_CACHE_PATH, "w") as cache_file:
-            cache_file.write(str(token_info))
+            cache_file.write(str(token_info))  # ✅ Save refreshed token
 
+    # ✅ Return a valid Spotify client
     return spotipy.Spotify(auth=token_info["access_token"])
+
 
 @app.route('/')
 def index():
